@@ -14,7 +14,7 @@ args = parser.parse_args()
 sock = socket.socket()
 sock.connect((args.host, args.port))
 
-sys.stdout = None
+# sys.stdout = None
 
 player = GridPlayer()
 controller = NetworkedController(sock, player)

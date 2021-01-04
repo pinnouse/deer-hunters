@@ -19,8 +19,9 @@ args = parser.parse_args()
 
 #Creates and connects the socket connection to the clients
 sock = socket.socket()
-host = socket.gethostname()
-sock.bind((host, args.port))
+# host = socket.gethostname()
+# sock.bind((host, args.port))
+sock.bind(('localhost', args.port))
 
 sock.settimeout(7)
 sock.listen(2)

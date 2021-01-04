@@ -1,6 +1,7 @@
 import json
 import copy
 from ctypes import c_uint32
+import time
 
 from move import GroundMove, StasisMove, AttackMove, MineMove, StunMove
 from units import MELEE_UNIT, WORKER_UNIT
@@ -38,7 +39,7 @@ class ClientConnection:
         for row in display:
             print(''.join(row))
 
-        input()
+        time.sleep(0.5)
 
     #units_to_dict returns a list of each unit as a dictionary
     def units_to_dict(self, units):
