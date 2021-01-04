@@ -14,7 +14,7 @@
    and ensure that there is no folder only files or simply unzip your submission
    and confirm that no folders are created.
 
-** Local Testing
+** Local Testing - Automated
    Enclosed is a =run.sh= file. This script automatically will run the server
    as well as both of the clients inside =tmux= (you need =tmux= installed for
    the script to work). You can run the script by typing =./run.sh 8888=. You 
@@ -23,17 +23,34 @@
    The script will open =tmux= launch the server, then make a new tab and launch
    your client twice. You can navigate between the tabs by pressing =C-b n= (control b then n).
 
+** Local Testing - Manual
    Alternatively you can launch the server and two clients manually in 3 seprate terminals
    by running =./server_runner.py 8888= and =./client_runner.py 8888= respectively.
 
 
 ** Windows Users
 	The run.sh will not work as Windows is not supported by default, 
-	although if running manually, you should have no issue.
+	although if running manually, you can use WSL.
+***Setup
 ***1. WSL(Windows Subsystem for Linux)
 	Install WSL, and use the ubuntu shell available from following 
 	the steps available at: https://ubuntu.com/wsl
 
 ***2. Python on WSL
 Please follow the steps here: https://pbpython.com/wsl-python.html
+
+*** 3. Manual testing
+Run using Manual local testing in Ubuntu wsl.
+*** 4. Automatic testing
+To enable running of run.sh, you must use windows_run.sh
+
+
+** Mac Users
+	The run.sh will not work as Windows is not supported by default, 
+	although if running manually, you should have no issue.
+***1. WSL(Windows Subsystem for Linux)
+	Install WSL, and use the ubuntu shell available from following 
+	the steps available at: https://ubuntu.com/wsl
+
+
 
