@@ -4,11 +4,17 @@ from typing import Tuple, List
 class GridPlayer:
 
     def __init__(self):
+        """
+        Initializes a new player.
+        """
         self.searched_resources = False
         self.resources = []
         self.display_map = []
 
     def _find_resources(self, game_map) -> List[Tuple[int, int]]:
+        """
+        Returns all the Resource nodes in the map with their coordinates (as a tuple in a list).
+        """
         grid = game_map.grid
         # for row in range(math.ceil(len(grid)/2)):
         for row in range(len(grid)):
@@ -18,6 +24,9 @@ class GridPlayer:
         self.searched_resources = True
 
     def _calculate_display_map(self, map, y, e):
+        """
+        Updates the display map of all units and seeable enemy units.
+        """
         self.display_map = map.grid
         for u in y.units.values():
             self.display_map[u.y][u.x] = 'melee' if u.type == 'melee' else 'w'
@@ -28,6 +37,9 @@ class GridPlayer:
         return (pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2
 
     def _next_closest_resource(self, unit) -> Tuple[int, int]:
+        """
+        Returns the coordinate of next closest resouce (in a tuple).
+        """
         d = -1
         closest = (-1, -1)
         for r in self.resources:
@@ -41,6 +53,9 @@ class GridPlayer:
         return closest
 
     def _diff_to_dir(self, p1: Tuple[int, int], p2: Tuple[int, int]) -> str:
+        """
+        Returns a direction needed to get from <p1> to <p2>
+        """
         if p2[0] == p1[0] - 1:
             return 'LEFT'
         elif p2[0] == p1[0] + 1:
@@ -52,6 +67,9 @@ class GridPlayer:
         return 'LEFT'
 
     def _find_free(self, unit):
+        """
+        Tries to find a free tile, if found return direction towards tile.
+        """
         for i in range(-1, 2):
             for j in range(-1, 2):
                 if i == 0 and j == 0 or abs(i) + abs(j) > 1:
@@ -70,6 +88,9 @@ class GridPlayer:
 
     def tick(self, game_map, your_units, enemy_units,
              resources: int, turns_left: int) -> list:
+        """
+        Return a list of moves all units take for our turn.
+        """
         self._calculate_display_map(game_map, your_units, enemy_units)
         moves = []
         if not self.searched_resources:
@@ -85,7 +106,7 @@ class GridPlayer:
 
         worker_count = len(workers)
         melee_count = len(melees)
-        
+
         for worker in workers:
             made_move = False
             if worker_count < len(self.resources) and worker.can_duplicate(resources, 'worker') and worker.attr['duplication_status'] <= 0:
@@ -109,4 +130,17 @@ class GridPlayer:
                     continue
                 moves.append(worker.move(self._diff_to_dir(path[0], path[1])))
                 made_move = True
+        
+        for melee in melees:
+            made_move = False
+            enemies = self.nearby_enemies_by_distance()
+            if len(enemies) > 0:    # if enemy is present
+                if len(self.can_attack(enemies)):
+                    moves.append(melee.attack(self.can_attack(enemies)[0][1]))  # attack
+                    made_move = True
+                # else: move unit towards nearest nearby_enemies_by_distance() without regards
+            if made_move:
+                continue
+            # for now, step towards enemy area or Resource nodes in enemy area and attack without regardes to their next move.
+            # prob use the nearest Resource nodes on our side and flip it for coordinates in enemy side
         return moves
