@@ -80,3 +80,4 @@ class GridPlayer:
                 if len(path) < 2:
                     continue
                 moves.append(worker.move(self._diff_to_dir(path[0], path[1])))
+        return moves
