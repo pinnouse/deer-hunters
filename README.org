@@ -35,13 +35,9 @@
 ***1. WSL(Windows Subsystem for Linux)
 	Install WSL, and use the ubuntu shell available from following 
 	the steps available at: https://ubuntu.com/wsl
-
-***2. Python on WSL
-Please follow the steps here: https://pbpython.com/wsl-python.html
-
-*** 3. Manual testing
+*** 2. Manual testing
 Run using Manual local testing in Ubuntu wsl.
-*** 4. Automatic testing
+*** 3. Automatic testing
    Update apt repositories and install dos2unix:
    ```
    sudo apt-get update
