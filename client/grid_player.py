@@ -1,3 +1,5 @@
+from helper_classes import *
+
 class GridPlayer:
 
     def __init__(self):
