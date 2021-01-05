@@ -10,6 +10,7 @@ class GridPlayer:
         self.searched_resources = False
         self.resources = []
         self.display_map = []
+        self.position = None
 
     def _find_resources(self, game_map) -> List[Tuple[int, int]]:
         """
@@ -74,7 +75,7 @@ class GridPlayer:
             for j in range(-1, 2):
                 if i == 0 and j == 0 or abs(i) + abs(j) > 1:
                     continue
-                x, y = unit.x + i, unit.y + j
+                x, y = unit.x + j, unit.y - i
                 if self.display_map[y][x] == ' ':
                     return self._diff_to_dir(unit.position(), (x, y))
         return None
@@ -85,6 +86,17 @@ class GridPlayer:
             if p1[i] != p2[i]:
                 return False
         return True
+
+    def _determine_position(self, game_map, unit_ys: int, num_units: int):
+        """
+        Sets self.position to 'top' or 'bottom' depending on where our units are positioned.
+        """
+        p = unit_ys // num_units
+        if p > game_map.grid//2:
+            self.position = 'bottom'
+        else:
+            self.position = 'top'
+
 
     def tick(self, game_map, your_units, enemy_units,
              resources: int, turns_left: int) -> list:
@@ -98,11 +110,18 @@ class GridPlayer:
         workers = []
         melees = []
 
+        pos = 0
+        i = 0
         for unit in your_units.units.values():
+            if self.position is None:
+                i += 1
+                pos += unit.y
             if unit.type == 'worker':
                 workers.append(unit)
             else:
                 melees.append(unit)
+        if self.position is None:
+            self._determine_position(game_map, pos, i)
 
         worker_count = len(workers)
         melee_count = len(melees)
