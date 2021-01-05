@@ -9,7 +9,7 @@ class GridFighters():
     GridFighters is the currently running game, it controls all game state and updates the state each turn with tick.
     """
 
-    def __init__(self, player_one_connection, player_two_connection, map_file):
+    def __init__(self, player_one_connection, player_two_connection, map_file, verbose=False):
         self.next_id = 0
         self.currently_duplicating = {}
         self.currently_mining = {}
@@ -25,6 +25,8 @@ class GridFighters():
             self.p1_conn.name: 0,
             self.p2_conn.name: 0
         }
+
+        self.verbose = verbose
 
         #Creates 2 copies of the map, one reversed of the other
         top = [line.rstrip() for line in map_file]
@@ -64,7 +66,9 @@ class GridFighters():
         self.all_units['{},{}'.format(unit.x, unit.y)] = unit
 
     def move_unit(self, x, y, unit):
-        del self.all_units['{},{}'.format(x, y)]
+        formatted = '{},{}'.format(x, y)
+        if formatted in self.all_units:
+            del self.all_units[formatted]
         self.all_units['{},{}'.format(unit.x, unit.y)] = unit
 
     def get_unit(self, x, y):
@@ -246,14 +250,16 @@ class GridFighters():
         #Gets the moves from each player and executes.
         self.tick_player(self.p1_conn, self.p1_units,
                          self.p2_units, self.p1_conn.name, turns)
-        self.print_map(self.p1_conn.name, self.p2_conn.name)
+        if self.verbose:
+            self.print_map(self.p1_conn.name, self.p2_conn.name)
 
         if len(self.p2_units) == 0:
             return self.p1_conn.name
 
         self.tick_player(self.p2_conn, self.p2_units,
                          self.p1_units, self.p2_conn.name, turns)
-        self.print_map(self.p1_conn.name, self.p2_conn.name)
+        if self.verbose:
+            self.print_map(self.p1_conn.name, self.p2_conn.name)
 
         if len(self.p1_units) == 0:
             return self.p2_conn.name

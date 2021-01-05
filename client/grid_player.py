@@ -1,4 +1,5 @@
 import math
+import copy
 from typing import Tuple, List
 
 class GridPlayer:
@@ -9,8 +10,13 @@ class GridPlayer:
         """
         self.searched_resources = False
         self.resources = []
+        self.targeted_resources = {}
+        self.targeted_resources_set = set([])
         self.display_map = []
         self.position = None
+
+    def get_tile(self, x, y) -> str:
+        return self.display_map[y][x].lower()
 
     def _find_resources(self, game_map) -> List[Tuple[int, int]]:
         """
@@ -28,11 +34,11 @@ class GridPlayer:
         """
         Updates the display map of all units and seeable enemy units.
         """
-        self.display_map = map.grid
+        self.display_map = copy.deepcopy(map.grid)
         for u in y.units.values():
-            self.display_map[u.y][u.x] = 'melee' if u.type == 'melee' else 'w'
+            self.display_map[u.y][u.x] = 'm' if u.type == 'melee' else 'w'
         for u in e.units.values():
-            self.display_map[u.y][u.x] = 'melee' if u.type == 'melee' else 'w'
+            self.display_map[u.y][u.x] = 'm' if u.type == 'melee' else 'w'
 
     def _dist_pos(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> int:
         return (pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2
@@ -45,7 +51,7 @@ class GridPlayer:
         closest = (-1, -1)
         for r in self.resources:
             x, y = r
-            if self.display_map[y][x].lower() != 'r':
+            if self.display_map[y][x].lower() != 'r' or r in self.targeted_resources_set:
                 continue
             dist = self._dist_pos(unit.position(), r)
             if d == -1 or dist < d:
@@ -128,7 +134,9 @@ class GridPlayer:
 
         for worker in workers:
             made_move = False
-            if worker_count < len(self.resources) and worker.can_duplicate(resources, 'worker') and worker.attr['duplication_status'] <= 0:
+            if worker.attr['duplication_status'] > 0:
+                continue
+            if worker_count < len(self.resources) and worker.can_duplicate(resources, 'worker'):
                 dup_pos = self._find_free(worker)
                 if not dup_pos is None:
                     worker_count += 1
@@ -142,17 +150,28 @@ class GridPlayer:
                 made_move = True
             if made_move:
                 continue
+            if worker.id in self.targeted_resources:
+                r = self.targeted_resources[worker.id]
+                path = game_map.bfs(worker.position(), r)
+                if path is None or len(path) < 2:
+                    continue
+                moves.append(worker.move(self._diff_to_dir(path[0], path[1])))
+                made_move = True
+                self.targeted_resources_set.add(r)
+            if made_move:
+                continue
             if self._next_closest_resource(worker)[0] > -1:
                 r = self._next_closest_resource(worker)
                 path = game_map.bfs(worker.position(), r)
                 if path is None or len(path) < 2:
                     continue
                 moves.append(worker.move(self._diff_to_dir(path[0], path[1])))
+                self.targeted_resources[worker.id] = r
                 made_move = True
         
         for melee in melees:
             made_move = False
-            enemies = melee.nearby_enemies_by_distance()
+            enemies = melee.nearby_enemies_by_distance(enemy_units)
             if len(enemies) > 0:    # if enemy is present
                 if len(self.can_attack(enemies)):
                     moves.append(melee.attack(self.can_attack(enemies)[0][1]))  # attack

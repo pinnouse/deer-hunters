@@ -222,6 +222,9 @@ class Map:
             if node == dest:
                 return path
             for adj in ((c+1, r), (c-1, r), (c, r+1), (c, r-1)):
+                x = graph[adj[1]][adj[0]]
+                if x != 'X' and x != ' ' and x != 'R':
+                    print('HELLO', x)
                 if (graph[adj[1]][adj[0]] == ' ' or
                         graph[adj[1]][adj[0]] == 'R') and adj not in vis:
                     queue.append(path + [adj])
