@@ -121,7 +121,7 @@ class GridPlayer:
                 if i == 0 and j == 0 or abs(i) + abs(j) > 1:
                     continue
                 x = unit.x + j
-                y = unit.y + ((-1)**(prefer_dir_safe ^ self.position == 'top') * i)
+                y = unit.y + ((-1)**(prefer_dir_safe ^ self.is_top()) * i)
                 if self.display_map[y][x] == ' ':
                     return self._diff_to_dir(unit.position(), (x, y))
         return None
