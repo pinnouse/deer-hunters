@@ -39,7 +39,7 @@ class ClientConnection:
         for row in display:
             print(''.join(row))
 
-        time.sleep(0.5)
+        time.sleep(0.3)
 
     #units_to_dict returns a list of each unit as a dictionary
     def units_to_dict(self, units):

@@ -111,7 +111,7 @@ class GridPlayer:
             return 'DOWN'
         return 'LEFT'
 
-    def _find_free(self, unit):
+    def _find_free(self, unit, prefer_dir_safe = False):
         """
         Tries to find a free tile, if found return direction towards tile.
         """
@@ -119,7 +119,8 @@ class GridPlayer:
             for j in range(-1, 2):
                 if i == 0 and j == 0 or abs(i) + abs(j) > 1:
                     continue
-                x, y = unit.x + j, unit.y - i
+                x = unit.x + j
+                y = unit.y + ((-1)**(prefer_dir_safe ^ self.position == 'top') * i)
                 if self.display_map[y][x] == ' ':
                     return self._diff_to_dir(unit.position(), (x, y))
         return None
@@ -218,8 +219,9 @@ class GridPlayer:
             made_move = False
             enemies = melee.nearby_enemies_by_distance(enemy_units)
             if len(enemies) > 0:    # if enemy is present
-                if len(melee.can_attack(enemies)):
-                    moves.append(melee.attack(self.can_attack(enemies)[0][1]))  # attack
+                attackable = melee.can_attack(enemy_units)
+                if len(attackable):
+                    moves.append(melee.attack(attackable[0][1]))  # attack
                     made_move = True
                 # else: move unit towards nearest nearby_enemies_by_distance() without regards
             if made_move:
