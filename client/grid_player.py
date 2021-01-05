@@ -92,7 +92,7 @@ class GridPlayer:
         Sets self.position to 'top' or 'bottom' depending on where our units are positioned.
         """
         p = unit_ys // num_units
-        if p > game_map.grid//2:
+        if p > len(game_map.grid)//2:
             self.position = 'bottom'
         else:
             self.position = 'top'
@@ -152,7 +152,7 @@ class GridPlayer:
         
         for melee in melees:
             made_move = False
-            enemies = self.nearby_enemies_by_distance()
+            enemies = melee.nearby_enemies_by_distance()
             if len(enemies) > 0:    # if enemy is present
                 if len(self.can_attack(enemies)):
                     moves.append(melee.attack(self.can_attack(enemies)[0][1]))  # attack
