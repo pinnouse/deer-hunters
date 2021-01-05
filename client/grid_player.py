@@ -129,9 +129,9 @@ class GridPlayer:
         for worker in workers:
             made_move = False
             if worker_count < len(self.resources) and worker.can_duplicate(resources, 'worker') and worker.attr['duplication_status'] <= 0:
-                worker_count += 1
                 dup_pos = self._find_free(worker)
                 if not dup_pos is None:
+                    worker_count += 1
                     moves.append(worker.duplicate(dup_pos, 'worker'))
                     resources -= 50
                     made_move = True
