@@ -13,18 +13,56 @@ class GridPlayer:
         self.targeted_resources = {}
         self.targeted_resources_set = set([])
         self.display_map = []
+        self.grid = []
         self.position = None
 
     def get_tile(self, x, y) -> str:
         return self.display_map[y][x].lower()
+
+    def bfs(self, grid: List[List[int]], start: Tuple[int, int], dest: Tuple[int, int], allowed_path = [' ', 'R']) -> List[Tuple[int, int]]:
+        """(Map, (int, int), (int, int)) -> [(int, int)]
+        Finds the shortest path from <start> to <dest>.
+        Returns a path with a list of coordinates starting with
+        <start> to <dest>.
+        """
+        graph = grid
+        queue = [[start]]
+        vis = set(start)
+        if start == dest or graph[start[1]][start[0]] == 'X' or \
+                not (0 < start[0] < len(graph[0])-1
+                     and 0 < start[1] < len(graph)-1):
+            return None
+
+        while queue:
+            path = queue.pop(0)
+            node = path[-1]
+            r = node[1]
+            c = node[0]
+
+            if node == dest:
+                return path
+            for adj in ((c+1, r), (c-1, r), (c, r+1), (c, r-1)):
+                if graph[adj[1]][adj[0]] in allowed_path and adj not in vis:
+                    queue.append(path + [adj])
+                    vis.add(adj)
+
+    def _find_path(self, start: Tuple[int, int], dest: Tuple[int, int]):
+        path = self.bfs(self.display_map, start, dest)
+        if path is None or len(path) < 2:
+            # Not a valid path, so we just move as much as we can ignoring units
+            path = self.bfs(self.grid, start, dest)
+            if path is None or len(path) < 2:
+                return None
+        return self._diff_to_dir(path[0], path[1])
 
     def _find_resources(self, game_map) -> List[Tuple[int, int]]:
         """
         Returns all the Resource nodes in the map with their coordinates (as a tuple in a list).
         """
         grid = game_map.grid
-        # for row in range(math.ceil(len(grid)/2)):
-        for row in range(len(grid)):
+        start = 0 if self.is_top() else len(grid)//2
+        for row in range(start, start + math.ceil(len(grid)/2)):
+        # for row in range(len(grid)):
             for col in range(len(grid[row])):
                 if game_map.is_resource(col, row):
                     self.resources.append((col, row))
@@ -103,16 +141,21 @@ class GridPlayer:
         else:
             self.position = 'top'
 
+    def is_top(self) -> bool:
+        """
+        Returns whether or not this player is the top player or bottom
+        """
+        return self.position == 'top'
+
 
     def tick(self, game_map, your_units, enemy_units,
              resources: int, turns_left: int) -> list:
         """
         Return a list of moves all units take for our turn.
         """
+        self.grid = game_map.grid
         self._calculate_display_map(game_map, your_units, enemy_units)
         moves = []
-        if not self.searched_resources:
-            self._find_resources(game_map)
         workers = []
         melees = []
 
@@ -128,6 +171,8 @@ class GridPlayer:
                 melees.append(unit)
         if self.position is None:
             self._determine_position(game_map, pos, i)
+        if not self.searched_resources:
+            self._find_resources(game_map)
 
         worker_count = len(workers)
         melee_count = len(melees)
@@ -152,28 +197,28 @@ class GridPlayer:
                 continue
             if worker.id in self.targeted_resources:
                 r = self.targeted_resources[worker.id]
-                path = game_map.bfs(worker.position(), r)
-                if path is None or len(path) < 2:
+                path = self._find_path(worker.position(), r)
+                if path is None:
                     continue
-                moves.append(worker.move(self._diff_to_dir(path[0], path[1])))
+                moves.append(worker.move(path))
                 made_move = True
-                self.targeted_resources_set.add(r)
             if made_move:
                 continue
             if self._next_closest_resource(worker)[0] > -1:
                 r = self._next_closest_resource(worker)
-                path = game_map.bfs(worker.position(), r)
-                if path is None or len(path) < 2:
+                path = self._find_path(worker.position(), r)
+                if path is None:
                     continue
-                moves.append(worker.move(self._diff_to_dir(path[0], path[1])))
+                moves.append(worker.move(path))
                 self.targeted_resources[worker.id] = r
+                self.targeted_resources_set.add(r)
                 made_move = True
         
         for melee in melees:
             made_move = False
             enemies = melee.nearby_enemies_by_distance(enemy_units)
             if len(enemies) > 0:    # if enemy is present
-                if len(self.can_attack(enemies)):
+                if len(melee.can_attack(enemies)):
                     moves.append(melee.attack(self.can_attack(enemies)[0][1]))  # attack
                     made_move = True
                 # else: move unit towards nearest nearby_enemies_by_distance() without regards
