@@ -12,7 +12,7 @@ console.log('Running challenger. 400 BAD REQUEST is when there is nothing to cha
 function challenge() {
     console.log('Challenging... ')
     i++
-    if (i > challengeRanks.length) i = 0
+    if (i >= challengeRanks.length) i = 0
     const data = JSON.stringify({
         'target_rank': challengeRanks[i]
     })
@@ -24,11 +24,11 @@ function challenge() {
         headers: {
             'Content-Type': 'application/json',
             'Content-Length': data.length,
-            'Cookie': 'session=eyJsb2dnZWRfaW4iOnRydWUsInVzZXJuYW1lIjoibmljaG9sLndvbmdAbWFpbC51dG9yb250by5jYSJ9.X_OJAg.1hAAGXuoMl9w4uZ0i3EgoVdOZ5Q'
+            'Cookie': 'session=eyJsb2dnZWRfaW4iOnRydWUsInVzZXJuYW1lIjoibmljaG9sLndvbmdAbWFpbC51dG9yb250by5jYSJ9.X_T4iA.oM2AsBUBBQ8CaKUEdOY6kAELqKA'
         }
     }, res => {
         res.on('data', d => {
-            console.log(`Req for: ${rank} code: ${res.statusCode} (${res.statusMessage})`)
+            console.log(`Req for: ${challengeRanks[i]} code: ${res.statusCode} (${res.statusMessage})`)
         })
     })
     req.write(data)
