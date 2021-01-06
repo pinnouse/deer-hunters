@@ -193,6 +193,8 @@ class GridPlayer:
             if made_move:
                 continue
             if worker.can_mine(game_map) or (worker.attr['mining_status'] <= 0 and any(r for r in self.resources if self._is_pos(worker.position(), r))):
+                self.targeted_resources[worker.id] = worker.position()
+                self.targeted_resources_set.add(worker.position())
                 moves.append(worker.mine())
                 made_move = True
             if made_move:
