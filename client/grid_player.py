@@ -294,7 +294,6 @@ class GridPlayer:
                 path = self._find_path(melee.position(), resource)
                 if path is None:
                     continue
-                print('added resource', self.position, resource)
                 moves.append(melee.move(path))
                 self.target_resource(melee.id, resource)
                 continue
@@ -309,7 +308,6 @@ class GridPlayer:
                 continue
             moves.append(melee.move(path))
             self.target_resource(melee.id, resource)
-            print('added target', self.position, resource)
             # assign self resource at beginning
             # move towards assigned resource stuff.
         return moves
