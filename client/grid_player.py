@@ -17,6 +17,7 @@ class GridPlayer:
         self.grid = []
         self.position = None
         self.assigned_resource = []
+        self.patrol_dist = 5
 
     def get_tile(self, x, y) -> str:
         return self.display_map[y][x].lower()
@@ -244,15 +245,27 @@ class GridPlayer:
                 if len(attackable):
                     moves.append(melee.attack(attackable[0][1]))  # attack
                     made_move = True
-                else:
+                if made_move:
+                    continue
+                resource = self._next_closest_resource(melee)
+                dist = abs(melee.x - resource.x) + abs(melee.y - resource.y)
+                if dist <= self.patrol_dist:
                     closest_enemy = enemy_units.get_unit(enemies[0][0])
                     e = (closest_enemy.x, closest_enemy.y)
-                    path = game_map.bfs(melee.position(), e)
-                    if path is None or len(path) < 2:
+                    path = self._find_path(melee.position(), e)
+                    if path is None:
                         continue
-                    moves.append(melee.move(self._diff_to_dir(path[0], path[1])))
+                    moves.append(melee.move(path))
+                if made_move:
+                    continue
+                path = self._find_path(melee.position(), resource)
+                moves.append(melee.move(path))
+                if not self.targeted_resources[melee.id]:
+                    self.targeted_resources[worker.id] = r
+                    self.targeted_resources_set.add(r)
                 made_move = True
             if made_move:
                 continue
-            # move towards assigned resource
+            # assign self resource at beginning
+            # move towards assigned resource stuff.
         return moves
