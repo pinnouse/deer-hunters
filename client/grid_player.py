@@ -1,6 +1,6 @@
 import math
 import copy
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Optional
 try:
     from client.helper_classes import *
     from client.move import *
@@ -30,8 +30,11 @@ class GridPlayer:
 
     def get_tile(self, x, y) -> str:
         return self.display_map[y][x].lower()
+    
+    def is_free(self, position: Tuple[int, int]):
+        return len(self.display_map[position[1]][position[0]].strip()) == 0
 
-    def bfs(self, grid: List[List[int]], start: Tuple[int, int], dest: Tuple[int, int], allowed_path = [' ', 'R']) -> List[Tuple[int, int]]:
+    def bfs(self, grid: List[List[int]], start: Tuple[int, int], dest: Tuple[int, int], allowed_path = [' ', 'r']) -> Optional[List[Tuple[int, int]]]:
         """(Map, (int, int), (int, int)) -> [(int, int)]
         Finds the shortest path from <start> to <dest>.
         Returns a path with a list of coordinates starting with
@@ -54,7 +57,7 @@ class GridPlayer:
             if node == dest:
                 return path
             for adj in ((c+1, r), (c-1, r), (c, r+1), (c, r-1)):
-                if graph[adj[1]][adj[0]] in allowed_path and adj not in vis:
+                if graph[adj[1]][adj[0]].lower() in allowed_path and adj not in vis:
                     queue.append(path + [adj])
                     vis.add(adj)
 
@@ -67,7 +70,7 @@ class GridPlayer:
         if path is None or len(path) < 2:
             # Not a valid path, so we just move as much as we can ignoring units
             path = self.bfs(self.grid, start, dest)
-            if path is None or len(path) < 2:
+            if path is None or len(path) < 2 or not self.is_free(path[1]):
                 return None
         return self._diff_to_dir(path[0], path[1])
 
@@ -230,7 +233,7 @@ class GridPlayer:
         melee_count = len(melees)
 
         for worker in workers:
-            if worker.attr['duplication_status'] > 0:
+            if worker.attr['duplication_status'] > 0 or worker.attr['mining_status'] > 0:
                 continue
             on_resource = any(r for r in self.resources if self._is_pos(worker.position(), r))
             if on_resource:
@@ -286,7 +289,7 @@ class GridPlayer:
                         continue
                     moves.append(melee.move(path))
                     continue
-                if melee.id in self.targeted_resources:
+                if melee.id in self.targeted_resources and melee.position() != self.targeted_resources[melee.id]:
                     r = self.targeted_resources[melee.id]
                     path = self._find_path(melee.position(), r)
                     moves.append(melee.move(path))
@@ -297,7 +300,7 @@ class GridPlayer:
                 moves.append(melee.move(path))
                 self.target_resource(melee.id, resource)
                 continue
-            if melee.id in self.targeted_resources:
+            if melee.id in self.targeted_resources and melee.position() != self.targeted_resources[melee.id]:
                 r = self.targeted_resources[melee.id]
                 path = self._find_path(melee.position(), r)
                 moves.append(melee.move(path))

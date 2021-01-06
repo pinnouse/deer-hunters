@@ -118,9 +118,7 @@ class WorkerUnit(Unit):
     def can_duplicate(self, resouces: int, unit_type: str) -> bool:
         if (unit_type == MELEE_UNIT and resouces >= self.melee_cost) or \
                 (unit_type == WORKER_UNIT and resouces >= self.worker_cost):
-            print('here')
             return self.duplication_status <= 0
-        print('here?')
         return False
 
     def is_duplicating(self) -> bool:
