@@ -12,7 +12,7 @@ console.log('Running challenger. 400 BAD REQUEST is when there is nothing to cha
 function challenge() {
     console.log('Challenging... ')
     i++
-    if (i > challengeRanks.length) i = 0
+    if (i >= challengeRanks.length) i = 0
     const data = JSON.stringify({
         'target_rank': challengeRanks[i]
     })
