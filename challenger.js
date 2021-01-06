@@ -28,7 +28,7 @@ function challenge() {
         }
     }, res => {
         res.on('data', d => {
-            console.log(`Req for: ${rank} code: ${res.statusCode} (${res.statusMessage})`)
+            console.log(`Req for: ${challengeRanks[i]} code: ${res.statusCode} (${res.statusMessage})`)
         })
     })
     req.write(data)
