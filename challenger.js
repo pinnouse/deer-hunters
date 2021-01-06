@@ -24,7 +24,7 @@ function challenge() {
         headers: {
             'Content-Type': 'application/json',
             'Content-Length': data.length,
-            'Cookie': 'session=eyJsb2dnZWRfaW4iOnRydWUsInVzZXJuYW1lIjoibmljaG9sLndvbmdAbWFpbC51dG9yb250by5jYSJ9.X_OJAg.1hAAGXuoMl9w4uZ0i3EgoVdOZ5Q'
+            'Cookie': 'session=eyJsb2dnZWRfaW4iOnRydWUsInVzZXJuYW1lIjoibmljaG9sLndvbmdAbWFpbC51dG9yb250by5jYSJ9.X_T4iA.oM2AsBUBBQ8CaKUEdOY6kAELqKA'
         }
     }, res => {
         res.on('data', d => {
