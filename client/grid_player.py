@@ -241,7 +241,7 @@ class GridPlayer:
                         moves.append(worker.duplicate(dup_pos, 'worker'))
                         resources -= worker.attr['worker_cost']
                         continue
-                if worker_count >= len(self.resources) and melee_count < worker_count and worker.can_duplicate(resources, 'melee'):
+                if worker_count >= len(self.resources) and melee_count < (worker_count+1)//2 and worker.can_duplicate(resources, 'melee'):
                     dup_pos = self._find_free(worker)
                     if not dup_pos is None:
                         melee_count += 1
