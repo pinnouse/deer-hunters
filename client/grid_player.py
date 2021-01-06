@@ -16,6 +16,7 @@ class GridPlayer:
         self.display_map = []
         self.grid = []
         self.position = None
+        self.assigned_resource = []
 
     def get_tile(self, x, y) -> str:
         return self.display_map[y][x].lower()
@@ -149,6 +150,20 @@ class GridPlayer:
         """
         return self.position == 'top'
 
+    def _enemy_resources(self) -> List[Tuple[int, int]]:
+        """
+        Returns a list of enemy resources based on which side we start on, starting from furtest.
+        """
+        if self.position == 'bottom':
+            return self.resources[len(self.resources)//2:]
+        else:
+            return reversed(self.resources[:len(self.resorces)//2])
+
+    def _assign_resources(self, melees):
+        # assign every starting unit to a resource node in enemy_resources
+        # if called with no unit: assign all units incremental
+        # if called with unit: assign specific unit to platoon with lowest units
+        return None
 
     def tick(self, game_map, your_units, enemy_units,
              resources: int, turns_left: int) -> list:
@@ -175,6 +190,9 @@ class GridPlayer:
             self._determine_position(game_map, pos, i)
         if not self.searched_resources:
             self._find_resources(game_map)
+
+        if not self.assigned_resource:
+            self._assign_resources()
 
         worker_count = len(workers)
         melee_count = len(melees)
@@ -224,9 +242,15 @@ class GridPlayer:
                 if len(attackable):
                     moves.append(melee.attack(attackable[0][1]))  # attack
                     made_move = True
-                # else: move unit towards nearest nearby_enemies_by_distance() without regards
+                else:
+                    closest_enemy = enemy_units.get_unit(enemies[0][0])
+                    e = (closest_enemy.x, closest_enemy.y)
+                    path = game_map.bfs(melee.position(), e)
+                    if path is None or len(path) < 2:
+                        continue
+                    moves.append(melee.move(self._diff_to_dir(path[0], path[1])))
+                made_move = True
             if made_move:
                 continue
-            # for now, step towards enemy area or Resource nodes in enemy area and attack without regardes to their next move.
-            # prob use the nearest Resource nodes on our side and flip it for coordinates in enemy side
+            # move towards assigned resource
         return moves
