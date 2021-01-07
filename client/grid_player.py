@@ -98,6 +98,16 @@ class GridPlayer:
             self.display_map[u.y][u.x] = 'm' if u.type == 'melee' else 'w'
         for u in e.units.values():
             self.display_map[u.y][u.x] = 'm' if u.type == 'melee' else 'w'
+            # Make all position around enemy wall
+            if u.type != 'melee':
+                continue
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    rx, ry = u.x+j, u.y+i
+                    if rx < 0 or ry < 0 or ry >= len(map.grid) or rx >= len(map.grid[0]):
+                        continue
+                    if len(self.display_map[ry][rx].strip()) == 0:
+                        self.display_map[ry][rx] = 'x'
 
     def _dist_pos(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> int:
         # return (pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2
