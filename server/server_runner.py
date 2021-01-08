@@ -41,7 +41,7 @@ p2 = ClientConnection(conn2, 'p2', args.verbose)
 #Picks a random map from the maps folder and creates the game
 file_name = 'maps/{}'.format(random.choice(os.listdir('maps')))
 
-game = GridFighters(p1, p2, open(file_name, 'r'), verbose=False)
+game = GridFighters(p1, p2, open(file_name, 'r'), verbose=args.verbose)
 
 #Ticks the game unit there is a winner or the max_turns is reached
 turn = 0

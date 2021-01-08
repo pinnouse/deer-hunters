@@ -217,12 +217,13 @@ class GridFighters():
         return '[{}]'.format(','.join(map(inner, display)))
 
     def print_map(self, p1_name, p2_name):
-        j = json.dumps({
-            'map': self.json_str(),
-            'p1_resources': self.resources[p1_name],
-            'p2_resources': self.resources[p2_name]
-        })
-        print('MAP:{}'.format(j))
+        # j = json.dumps({
+        #     'map': self.json_str(),
+        #     'p1_resources': self.resources[p1_name],
+        #     'p2_resources': self.resources[p2_name]
+        # })
+        # print('MAP:{}'.format(j))
+        print(f'p1 resources: {self.resources[p1_name]} | p2 resources: {self.resources[p2_name]}')
 
     #tick is run each turn and updates the game state
     def tick(self, turns):

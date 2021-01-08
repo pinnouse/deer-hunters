@@ -1,7 +1,15 @@
 import math
 import copy
-from typing import Tuple, List
+from typing import Tuple, List, Union, Optional
+try:
+    from client.helper_classes import *
+    from client.move import *
+except:
+    print("Couldn't import from client. Safe to ignore; just for type hinting")
 from helper_classes import *
+from move import *
+
+MELEE_CHASE_RANGE = 6
 
 class GridPlayer:
 
@@ -11,8 +19,9 @@ class GridPlayer:
         """
         self.searched_resources = False
         self.resources = []
+        self.all_resources = []
         self.targeted_resources = {}
-        self.targeted_resources_set = set([])
+        self.targeted_resources_set = set()
         self.display_map = []
         self.grid = []
         self.position = None
@@ -21,8 +30,11 @@ class GridPlayer:
 
     def get_tile(self, x, y) -> str:
         return self.display_map[y][x].lower()
+    
+    def is_free(self, position: Tuple[int, int]):
+        return len(self.display_map[position[1]][position[0]].strip()) == 0
 
-    def bfs(self, grid: List[List[int]], start: Tuple[int, int], dest: Tuple[int, int], allowed_path = [' ', 'R']) -> List[Tuple[int, int]]:
+    def bfs(self, grid: List[List[int]], start: Tuple[int, int], dest: Tuple[int, int], allowed_path = [' ', 'r']) -> Optional[List[Tuple[int, int]]]:
         """(Map, (int, int), (int, int)) -> [(int, int)]
         Finds the shortest path from <start> to <dest>.
         Returns a path with a list of coordinates starting with
@@ -45,16 +57,20 @@ class GridPlayer:
             if node == dest:
                 return path
             for adj in ((c+1, r), (c-1, r), (c, r+1), (c, r-1)):
-                if graph[adj[1]][adj[0]] in allowed_path and adj not in vis:
+                if graph[adj[1]][adj[0]].lower() in allowed_path and adj not in vis:
                     queue.append(path + [adj])
                     vis.add(adj)
+
+    def target_resource(self, id: int, resource_position: Tuple[int, int]):
+        self.targeted_resources[id] = resource_position
+        self.targeted_resources_set.add(resource_position)
 
     def _find_path(self, start: Tuple[int, int], dest: Tuple[int, int]):
         path = self.bfs(self.display_map, start, dest)
         if path is None or len(path) < 2:
             # Not a valid path, so we just move as much as we can ignoring units
             path = self.bfs(self.grid, start, dest)
-            if path is None or len(path) < 2:
+            if path is None or len(path) < 2 or not self.is_free(path[1]):
                 return None
         return self._diff_to_dir(path[0], path[1])
 
@@ -64,11 +80,13 @@ class GridPlayer:
         """
         grid = game_map.grid
         start = 0 if self.is_top() else len(grid)//2
-        for row in range(start, start + math.ceil(len(grid)/2)):
+        for row in range(0, len(grid)):
         # for row in range(len(grid)):
             for col in range(len(grid[row])):
                 if game_map.is_resource(col, row):
-                    self.resources.append((col, row))
+                    self.all_resources.append((col, row))
+                    if start <= row < start + (len(grid)+1)//2:
+                        self.resources.append((col, row))
         self.searched_resources = True
 
     def _calculate_display_map(self, map, y, e):
@@ -80,19 +98,31 @@ class GridPlayer:
             self.display_map[u.y][u.x] = 'm' if u.type == 'melee' else 'w'
         for u in e.units.values():
             self.display_map[u.y][u.x] = 'm' if u.type == 'melee' else 'w'
+            # Make all position around enemy wall
+            if u.type != 'melee':
+                continue
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    rx, ry = u.x+j, u.y+i
+                    if rx < 0 or ry < 0 or ry >= len(map.grid) or rx >= len(map.grid[0]):
+                        continue
+                    if len(self.display_map[ry][rx].strip()) == 0:
+                        self.display_map[ry][rx] = 'x'
 
     def _dist_pos(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> int:
-        return (pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2
+        # return (pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2
+        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
-    def _next_closest_resource(self, unit) -> Tuple[int, int]:
+    def _next_closest_resource(self, unit: Unit, search_safe = True, allow_targeted = False) -> Tuple[int, int]:
         """
         Returns the coordinate of next closest resouce (in a tuple).
         """
         d = -1
         closest = (-1, -1)
-        for r in self.resources:
+        resources = self.resources if search_safe else self.all_resources
+        for r in resources:
             x, y = r
-            if self.display_map[y][x].lower() != 'r' or r in self.targeted_resources_set:
+            if self.display_map[y][x].lower() != 'r' or (not allow_targeted and r in self.targeted_resources_set):
                 continue
             dist = self._dist_pos(unit.position(), r)
             if d == -1 or dist < d:
@@ -114,7 +144,7 @@ class GridPlayer:
             return 'DOWN'
         return 'LEFT'
 
-    def _find_free(self, unit, prefer_dir_safe = False):
+    def _find_free(self, unit, prefer_dir_safe = False, return_position = False) -> Union[str, Tuple[int, int]]:
         """
         Tries to find a free tile, if found return direction towards tile.
         """
@@ -125,6 +155,8 @@ class GridPlayer:
                 x = unit.x + j
                 y = unit.y + ((-1)**(prefer_dir_safe ^ self.is_top()) * i)
                 if self.display_map[y][x] == ' ':
+                    if return_position:
+                        return (x, y)
                     return self._diff_to_dir(unit.position(), (x, y))
         return None
 
@@ -144,6 +176,7 @@ class GridPlayer:
             self.position = 'bottom'
         else:
             self.position = 'top'
+        print(f'I am in the {self.position} position')
 
     def is_top(self) -> bool:
         """
@@ -159,6 +192,15 @@ class GridPlayer:
             return self.resources[len(self.resources)//2:]
         else:
             return reversed(self.resources[:len(self.resorces)//2])
+    
+    def _update_targeted(self, units: Units):
+        del_keys = []
+        for unit_id in self.targeted_resources:
+            if not str(unit_id) in units.units:
+                del_keys.append(unit_id)
+                self.targeted_resources_set.discard(self.targeted_resources[unit_id])
+        for k in del_keys:
+            del self.targeted_resources[k]
 
     def _assign_resources(self, melees):
         # assign every starting unit to a resource node in enemy_resources
@@ -166,8 +208,8 @@ class GridPlayer:
         # if called with unit: assign specific unit to platoon with lowest units
         return None
 
-    def tick(self, game_map, your_units, enemy_units,
-             resources: int, turns_left: int) -> list:
+    def tick(self, game_map: Map, your_units: Units, enemy_units: Units,
+             resources: int, turns_left: int) -> List[Move]:
         """
         Return a list of moves all units take for our turn.
         """
@@ -176,6 +218,8 @@ class GridPlayer:
         moves = []
         workers = []
         melees = []
+
+        self._update_targeted(your_units)
 
         pos = 0
         i = 0
@@ -193,39 +237,40 @@ class GridPlayer:
             self._find_resources(game_map)
 
         if not self.assigned_resource:
-            self._assign_resources()
+            self._assign_resources(melees)
 
         worker_count = len(workers)
         melee_count = len(melees)
 
         for worker in workers:
-            made_move = False
-            if worker.attr['duplication_status'] > 0:
+            if worker.attr['duplication_status'] > 0 or worker.attr['mining_status'] > 0:
                 continue
-            if worker_count < len(self.resources) and worker.can_duplicate(resources, 'worker'):
-                dup_pos = self._find_free(worker)
-                if not dup_pos is None:
-                    worker_count += 1
-                    moves.append(worker.duplicate(dup_pos, 'worker'))
-                    resources -= 50
-                    made_move = True
-            if made_move:
-                continue
-            if worker.can_mine(game_map) or (worker.attr['mining_status'] <= 0 and any(r for r in self.resources if self._is_pos(worker.position(), r))):
-                self.targeted_resources[worker.id] = worker.position()
-                self.targeted_resources_set.add(worker.position())
-                moves.append(worker.mine())
-                made_move = True
-            if made_move:
-                continue
+            on_resource = any(r for r in self.resources if self._is_pos(worker.position(), r))
+            if on_resource:
+                if worker_count < len(self.resources) and worker.can_duplicate(resources, 'worker'):
+                    dup_pos = self._find_free(worker)
+                    if not dup_pos is None:
+                        worker_count += 1
+                        moves.append(worker.duplicate(dup_pos, 'worker'))
+                        resources -= worker.attr['worker_cost']
+                        continue
+                if worker_count >= len(self.resources) and melee_count < (worker_count+1)//2 and worker.can_duplicate(resources, 'melee'):
+                    dup_pos = self._find_free(worker)
+                    if not dup_pos is None:
+                        melee_count += 1
+                        moves.append(worker.duplicate(dup_pos, 'melee'))
+                        resources -= worker.attr['melee_cost']
+                        continue
+                if worker.can_mine(game_map):
+                    self.target_resource(worker.id, worker.position())
+                    moves.append(worker.mine())
+                    continue
             if worker.id in self.targeted_resources:
                 r = self.targeted_resources[worker.id]
                 path = self._find_path(worker.position(), r)
                 if path is None:
                     continue
                 moves.append(worker.move(path))
-                made_move = True
-            if made_move:
                 continue
             if self._next_closest_resource(worker)[0] > -1:
                 r = self._next_closest_resource(worker)
@@ -233,22 +278,19 @@ class GridPlayer:
                 if path is None:
                     continue
                 moves.append(worker.move(path))
-                self.targeted_resources[worker.id] = r
-                self.targeted_resources_set.add(r)
-                made_move = True
+                self.target_resource(worker.id, r)
+                continue
         
         for melee in melees:
-            made_move = False
             enemies = melee.nearby_enemies_by_distance(enemy_units)
             if len(enemies) > 0:    # if enemy is present
                 attackable = melee.can_attack(enemy_units)
                 if len(attackable):
                     moves.append(melee.attack(attackable[0][1]))  # attack
-                    made_move = True
-                if made_move:
                     continue
-                resource = self._next_closest_resource(melee)
-                dist = abs(melee.x - resource.x) + abs(melee.y - resource.y)
+                closest_enemy = next((e for e in enemies if e[1] < MELEE_CHASE_RANGE), None)
+                resource = self._next_closest_resource(melee, search_safe=False)
+                dist = abs(melee.x - resource[0]) + abs(melee.y - resource[1])
                 if dist <= self.patrol_dist:
                     closest_enemy = enemy_units.get_unit(enemies[0][0])
                     e = (closest_enemy.x, closest_enemy.y)
@@ -256,16 +298,29 @@ class GridPlayer:
                     if path is None:
                         continue
                     moves.append(melee.move(path))
-                if made_move:
+                    continue
+                if melee.id in self.targeted_resources and melee.position() != self.targeted_resources[melee.id]:
+                    r = self.targeted_resources[melee.id]
+                    path = self._find_path(melee.position(), r)
+                    moves.append(melee.move(path))
                     continue
                 path = self._find_path(melee.position(), resource)
+                if path is None:
+                    continue
                 moves.append(melee.move(path))
-                if not self.targeted_resources[melee.id]:
-                    self.targeted_resources[worker.id] = r
-                    self.targeted_resources_set.add(r)
-                made_move = True
-            if made_move:
+                self.target_resource(melee.id, resource)
                 continue
+            if melee.id in self.targeted_resources and melee.position() != self.targeted_resources[melee.id]:
+                r = self.targeted_resources[melee.id]
+                path = self._find_path(melee.position(), r)
+                moves.append(melee.move(path))
+                continue
+            resource = self._next_closest_resource(melee, search_safe=False)
+            path = self._find_path(melee.position(), resource)
+            if path is None:
+                continue
+            moves.append(melee.move(path))
+            self.target_resource(melee.id, resource)
             # assign self resource at beginning
             # move towards assigned resource stuff.
         return moves
