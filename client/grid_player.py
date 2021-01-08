@@ -21,7 +21,7 @@ class GridPlayer:
         self.resources = []
         self.all_resources = []
         self.targeted_resources = {}
-        self.targeted_resources_set = set([])
+        self.targeted_resources_set = set()
         self.display_map = []
         self.grid = []
         self.position = None
@@ -198,7 +198,7 @@ class GridPlayer:
         for unit_id in self.targeted_resources:
             if not str(unit_id) in units.units:
                 del_keys.append(unit_id)
-                self.targeted_resources_set.discard(unit_id)
+                self.targeted_resources_set.discard(self.targeted_resources[unit_id])
         for k in del_keys:
             del self.targeted_resources[k]
 
