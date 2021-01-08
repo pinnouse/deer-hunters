@@ -107,7 +107,7 @@ class GridPlayer:
                     if rx < 0 or ry < 0 or ry >= len(map.grid) or rx >= len(map.grid[0]):
                         continue
                     if len(self.display_map[ry][rx].strip()) == 0:
-                        self.display_map[ry][rx] = 'x'
+                        self.display_map[ry][rx] = 'd'
 
     def _dist_pos(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> int:
         # return (pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2
